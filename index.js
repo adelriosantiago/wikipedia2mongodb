@@ -35,38 +35,41 @@ rl.on("line", function(line) {
       //Iterate over all articles
       articles.forEach(function(item) {
         let name = item
-          .substr(item.lastIndexOf("/") + 1, item.length)
-          .replace("_", " ");
-          
-        console.log("Wiki'ing article: " + name);
-        wiki().page(name).then(function(page) {
-          page.content().then(function(text) {
-            if (text.length == 0) return;
+          .substr(item.lastIndexOf("/") + 1, item.length);
+        
+        name = decodeURI(name);
+        
+        setTimeout(() => {
+          console.log("Wiki'ing article: " + name);
+          wiki().page(name).then(function(page) {
+            page.content().then(function(text) {
+              if (text.length == 0) return;
 
-            let dbEntry = {
-              id: slugg(name),
-              length: text.length,
-              title: name,
-              text: text,
-              source: item,
-              date: new Date(),
-            };
+              let dbEntry = {
+                id: slugg(name),
+                length: text.length,
+                title: name,
+                text: text,
+                date: new Date(),
+              };
 
-            db.collection(collection).updateOne(
-              { id: dbEntry.id }, //Only add the document if the id and the length are different
-              { $set: dbEntry },
-              { upsert: true },
-              function(err, result) {
-                assert.equal(err, null);
-                if (result.modifiedCount) {
-                  console.log(`Updated "${dbEntry.id}" in ${database}:${collection}`);
-                } else {
-                  console.log(`Document "${dbEntry.id}" in ${database}:${collection} was not updated`);
+              db.collection(collection).updateOne(
+                { id: dbEntry.id }, //Only add the document if the id and the length are different
+                { $set: dbEntry },
+                { upsert: true },
+                function(err, result) {
+                  assert.equal(err, null);
+                  if (result.modifiedCount) {
+                    console.log(`Updated "${dbEntry.id}" in ${database}:${collection}`);
+                  } else {
+                    console.log(`Document "${dbEntry.id}" in ${database}:${collection} was created.`);
+                  }
                 }
-              }
-            );
+              );
+            });
           });
-        });
+        }, Math.round(Math.random() * 1000 * 60)); //To avoid getting throttled
+        
       });
     });
   });
